@@ -2,6 +2,6 @@
 {
     public class Circle : Shape
     {
-        public double Radius { get; set; }
+        public double Radius;
     }
 }
