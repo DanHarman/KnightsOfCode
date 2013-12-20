@@ -4,37 +4,12 @@ using System.Linq.Expressions;
 
 namespace KoC.Mapnificent
 {
-    public abstract class MemberDefinition
-    {
-        public string ToMemberName { get; private set; }
 
-        protected MemberDefinition(string toMemberName)
-        {
-            ToMemberName = toMemberName;
-        }
-    }
-
-    public class BindMemberDefinition : MemberDefinition
-    {
-        public BindMemberDefinition(string toMemberName, Func<object, object> fromMemberDelegate)
-            : base(toMemberName)
-        {
-            
-        }
-    }
-
-    public class IgnoreMemberDefinition : MemberDefinition
-    {
-        public IgnoreMemberDefinition(string toMemberName)
-            : base(toMemberName)
-        {            
-        }        
-    }
 
     public class MapDefinition<TFrom, TTo> : IMapDefinition
         where TTo : class
     {
-        private Dictionary<string, MemberDefinition> memberDefinitions = new Dictionary<string, MemberDefinition>(); 
+       // private Dictionary<string, MemberDefinition> memberDefinitions = new Dictionary<string, MemberDefinition>(); 
 
         public MapDefinition(Mapper mapper)
         {
@@ -44,9 +19,9 @@ namespace KoC.Mapnificent
         public Mapper Mapper { get; set; }
 
         public MapDefinition<TFrom, TTo> For<TToMember>(Expression<Func<TTo, TToMember>> toMember,
-            Action<BindingDefinition<TToMember>> options)
+            Action<MemberDefinition<TToMember>> options)
         {
-            Require.IsFalse(ExpressionHelpers.IsComplexChain(toMember), "Parameter 'toMember' must be a simple expression.");
+
 
             return this;
         }
@@ -73,11 +48,6 @@ namespace KoC.Mapnificent
             return this;
         }
 
-        protected void AddMemberDefinition(MemberDefinition memberDefinition)
-        {
-            
-        }
-
         internal void Freeze()
         {
             // Get To class properties.
@@ -90,27 +60,32 @@ namespace KoC.Mapnificent
         }
 
 
-        public class BindingDefinition<TToMember>
+        public class MemberDefinition<TToMember>
         {
-            private readonly MapDefinition<TFrom, TTo> mapDefinition;
             private readonly string toMemberName;
+            private readonly Action<object, object> toMemberSetter;
 
-            public BindingDefinition(MapDefinition<TFrom, TTo> mapDefinition, string toMemberName)
+            public MemberDefinition(Expression<Func<TTo, TToMember>> toMember)
             {
-                this.mapDefinition = mapDefinition;
-                this.toMemberName = toMemberName;
+                Require.NotNull(toMember, "toMember");
+                Require.IsFalse(ExpressionHelpers.IsComplexChain(toMember), "Parameter 'toMember' must be a simple expression.");
+
+                var memberInfo = ExpressionHelpers.GetMemberInfo(toMember);
+                toMemberName = memberInfo.Name;
+                toMemberSetter = ReflectionHelpers.CreateWeakMemberSetter(memberInfo);
             }
 
-            public BindingDefinition<TToMember> From<TFromMember>(
+            public MemberDefinition<TToMember> From<TFromMember>(
                 Expression<Func<TFrom, TFromMember>> fromMember)
             {
-                mapDefinition.AddMemberDefinition(null);
+                Require.NotNull(fromMember, "fromMember");
+
                 return this;
             }
 
-            public BindingDefinition<TToMember> Ignore()
+            public MemberDefinition<TToMember> Ignore()
             {
-                mapDefinition.AddMemberDefinition(new IgnoreMemberDefinition(toMemberName));
+              //  mapDefinition.AddMemberDefinition(new IgnoreMemberDefinition(toMemberName));
                 return this;
             }
         }

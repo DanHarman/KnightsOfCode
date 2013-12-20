@@ -52,7 +52,6 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
-    <Compile Include="ReflectionHelpersTests.cs" />
     <Compile Include="TargetClassSchemaTests.cs" />
     <Compile Include="TestEntities\Inheritance\Circle.cs" />
     <Compile Include="TestEntities\Inheritance\CircleDto.cs" />
