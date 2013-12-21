@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace KoC.Mapnificent
@@ -64,6 +65,8 @@ namespace KoC.Mapnificent
         {
             private readonly string toMemberName;
             private readonly Action<object, object> toMemberSetter;
+            private string fromMemberName;
+            private Func<object, object> fromMemberGetter; 
 
             public MemberDefinition(Expression<Func<TTo, TToMember>> toMember)
             {
@@ -80,12 +83,18 @@ namespace KoC.Mapnificent
             {
                 Require.NotNull(fromMember, "fromMember");
 
+                var memberInfos = ExpressionHelpers.GetMemberInfos(fromMember);
+                fromMemberName = String.Join(".", memberInfos.Select(x => x.Name));
+                ReflectionHelpers.CreateSafeWeakMemberChainGetter(memberInfos);
+
                 return this;
             }
 
             public MemberDefinition<TToMember> Ignore()
             {
-              //  mapDefinition.AddMemberDefinition(new IgnoreMemberDefinition(toMemberName));
+                fromMemberName = string.Empty;
+                fromMemberGetter = null;
+
                 return this;
             }
         }
